@@ -4,10 +4,14 @@ import { useFetchRecipientUser } from "../../hooks/useFetchRecipient";
 import { useContext } from "react";
 import { ChatContext } from "../../Context/ChatContext";
 import { unreadNotficationsFunc } from "../../utilis/unreadNotifications";
+import { useFetchLatestMessage } from "../../hooks/useFetchLatestMessage";
+import moment from "moment";
 
 const UserChat = ({ chat, user }) => {
   const { recipientUser } = useFetchRecipientUser(chat, user);
-  const { onlineUsers, notifications } = useContext(ChatContext);
+  const { onlineUsers, notifications, markThisUserNotificationsAsRead } =
+    useContext(ChatContext);
+  const { latestMessage } = useFetchLatestMessage(chat);
 
   const unreadNotifications = unreadNotficationsFunc(notifications);
 
@@ -18,6 +22,14 @@ const UserChat = ({ chat, user }) => {
   const isOnline = onlineUsers?.some(
     (user) => user?.userId === recipientUser?._id
   );
+
+  const truncateText = (text) => {
+    let shortText = text.substring(0, 20);
+    if (text.length > 20) {
+      shortText = shortText + "...";
+    }
+    return shortText;
+  };
   //   console.log("recipientUser", recipientUser);
   return (
     <Stack
@@ -25,6 +37,11 @@ const UserChat = ({ chat, user }) => {
       gap={3}
       className="user-card align-items-center p-2 justify-content-between"
       role="button"
+      onClick={() => {
+        if (thisUserNotifications?.length !== 0) {
+          markThisUserNotificationsAsRead(thisUserNotifications, notifications);
+        }
+      }}
     >
       <div className="d-flex">
         <div className="me-2">
@@ -32,11 +49,17 @@ const UserChat = ({ chat, user }) => {
         </div>
         <div className="text-content">
           <div className="name">{recipientUser?.name}</div>
-          <div className="text">Text Message</div>
+          <div className="text">
+            {latestMessage?.text && (
+              <span>{truncateText(latestMessage?.text)}</span>
+            )}
+          </div>
         </div>
       </div>
       <div className="d-flex flex-column align-item-end">
-        <div className="date">12/12/2023</div>
+        <div className="date">
+          {moment(latestMessage?.createdAt).calendar()}
+        </div>
         <div
           className={
             thisUserNotifications?.length > 0 ? "this-user-notifications" : ""
